@@ -2192,10 +2192,7 @@ public class FormEntryActivity extends CollectAbstractActivity implements Animat
                     }
                 } else {
                     dismissFormLoadingDialogFragment();
-                    FormLoaderTask t = formLoaderTask;
-                    formLoaderTask = null;
-                    t.cancel(true);
-                    t.destroy();
+                    cancelAndDestroyFormLoaderTask();
                     // there is no formController -- fire MainMenu activity?
                     startActivity(new Intent(this, MainMenuActivity.class));
                 }
@@ -2266,10 +2263,7 @@ public class FormEntryActivity extends CollectAbstractActivity implements Animat
             // lives on and retains the FEC in memory.
             // but only if it's done, otherwise the thread never returns
             if (formLoaderTask.getStatus() == AsyncTask.Status.FINISHED) {
-                FormLoaderTask t = formLoaderTask;
-                formLoaderTask = null;
-                t.cancel(true);
-                t.destroy();
+                cancelAndDestroyFormLoaderTask();
             }
         }
         if (saveToDiskTask != null) {
@@ -2372,10 +2366,7 @@ public class FormEntryActivity extends CollectAbstractActivity implements Animat
                 });
             } else {
                 formLoaderTask.setFormLoaderListener(null);
-                FormLoaderTask t = formLoaderTask;
-                formLoaderTask = null;
-                t.cancel(true);
-                t.destroy();
+                cancelAndDestroyFormLoaderTask();
 
                 Collect.getInstance().setFormController(formController);
                 supportInvalidateOptionsMenu();
@@ -2834,12 +2825,16 @@ public class FormEntryActivity extends CollectAbstractActivity implements Animat
     public void onCancelFormLoading() {
         if (formLoaderTask != null) {
             formLoaderTask.setFormLoaderListener(null);
-            FormLoaderTask t = formLoaderTask;
-            formLoaderTask = null;
-            t.cancel(true);
-            t.destroy();
+            cancelAndDestroyFormLoaderTask();
         }
         finish();
+    }
+
+    protected void cancelAndDestroyFormLoaderTask() {
+        FormLoaderTask t = formLoaderTask;
+        formLoaderTask = null;
+        t.cancel(true);
+        t.destroy();
     }
 
     /**
