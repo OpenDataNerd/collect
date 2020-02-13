@@ -8,7 +8,8 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
-import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.storage.StoragePathProvider;
+import org.odk.collect.android.storage.StorageSubdirectory;
 import org.odk.collect.android.support.CopyFormRule;
 import org.odk.collect.android.support.ResetStateRule;
 
@@ -36,7 +37,7 @@ public class FormLoaderTaskTest {
     // Validate the use of CSV files as secondary instances accessed through "jr://file-csv"
     @Test
     public void loadFormWithSecondaryInstanceFromCSV() throws Exception {
-        final String formPath = Collect.FORMS_PATH + File.separator + SECONDARY_INSTANCE_EXTERNAL_CSV_FORM;
+        final String formPath = new StoragePathProvider().getDirPath(StorageSubdirectory.FORMS) + File.separator + SECONDARY_INSTANCE_EXTERNAL_CSV_FORM;
         FormLoaderTask formLoaderTask = new FormLoaderTask(formPath, null, null);
         FormLoaderTask.FECWrapper wrapper = formLoaderTask.execute(formPath).get();
         Assert.assertNotNull(wrapper);
@@ -45,7 +46,7 @@ public class FormLoaderTaskTest {
     // Validate the use of a CSV file externally accessed through search/pulldata
     @Test
     public void loadSearchFromExternalCSV() throws Exception {
-        final String formPath = Collect.FORMS_PATH + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM;
+        final String formPath = new StoragePathProvider().getDirPath(StorageSubdirectory.FORMS) + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM;
         FormLoaderTask formLoaderTask = new FormLoaderTask(formPath, null, null);
         FormLoaderTask.FECWrapper wrapper = formLoaderTask.execute(formPath).get();
         Assert.assertNotNull(wrapper);
@@ -54,7 +55,7 @@ public class FormLoaderTaskTest {
     // Validate the side effects of importing external data for search/pulldata
     @Test
     public void loadSearchFromExternalCSVdoesNotRenameFiles() throws Exception {
-        final String formPath = Collect.FORMS_PATH + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM;
+        final String formPath = new StoragePathProvider().getDirPath(StorageSubdirectory.FORMS) + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM;
         FormLoaderTask formLoaderTask = new FormLoaderTask(formPath, null, null);
         FormLoaderTask.FECWrapper wrapper = formLoaderTask.execute(formPath).get();
         Assert.assertNotNull(wrapper);
@@ -68,7 +69,7 @@ public class FormLoaderTaskTest {
     // Validate that importing external data multiple times does not fail due to side effects from import
     @Test
     public void loadSearchFromExternalCSVmultipleTimes() throws Exception {
-        final String formPath = Collect.FORMS_PATH + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM;
+        final String formPath = new StoragePathProvider().getDirPath(StorageSubdirectory.FORMS) + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM;
         // initial load with side effects
         FormLoaderTask formLoaderTask = new FormLoaderTask(formPath, null, null);
         FormLoaderTask.FECWrapper wrapper = formLoaderTask.execute(formPath).get();

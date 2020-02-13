@@ -36,6 +36,7 @@ import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.exception.ExternalParamsException;
 import org.odk.collect.android.external.ExternalAppsUtils;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.utilities.ActivityAvailability;
 import org.odk.collect.android.utilities.SoftKeyboardUtils;
 import org.odk.collect.android.utilities.ToastUtils;
@@ -48,6 +49,7 @@ import javax.inject.Inject;
 import timber.log.Timber;
 
 import static android.content.Intent.ACTION_SENDTO;
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createSimpleButton;
 import static org.odk.collect.android.injection.DaggerUtils.getComponent;
 import static org.odk.collect.android.utilities.ApplicationConstants.RequestCodes;
 
@@ -97,7 +99,7 @@ public class ExStringWidget extends StringWidget implements BinaryWidget {
     protected static final String DATA_NAME = "value";
 
     private boolean hasExApp = true;
-    private Button launchIntentButton;
+    public Button launchIntentButton;
 
     @Inject
     public ActivityAvailability activityAvailability;
@@ -110,13 +112,13 @@ public class ExStringWidget extends StringWidget implements BinaryWidget {
     @Override
     protected void setUpLayout(Context context) {
         answerText.setText(getFormEntryPrompt().getAnswerText());
-        launchIntentButton = getSimpleButton(getButtonText());
+        launchIntentButton = createSimpleButton(getContext(), getFormEntryPrompt().isReadOnly(), getButtonText(), getAnswerFontSize(), this);
 
         LinearLayout answerLayout = new LinearLayout(getContext());
         answerLayout.setOrientation(LinearLayout.VERTICAL);
         answerLayout.addView(launchIntentButton);
         answerLayout.addView(answerText);
-        addAnswerView(answerLayout);
+        addAnswerView(answerLayout, WidgetViewUtils.getStandardMargin(context));
 
         Collect.getInstance().logRemoteAnalytics("WidgetType", "ExternalApp", Collect.getCurrentFormIdentifierHash());
     }

@@ -37,7 +37,7 @@ import org.odk.collect.android.formentry.questions.QuestionDetails;
 import org.odk.collect.android.utilities.ThemeUtils;
 import org.odk.collect.android.utilities.WidgetAppearanceUtils;
 
-import static org.odk.collect.android.formentry.media.FormMediaHelpers.getPlayableAudioURI;
+import static org.odk.collect.android.formentry.media.FormMediaUtils.getPlayableAudioURI;
 
 public abstract class SelectWidget extends ItemsWidget {
 
@@ -50,7 +50,7 @@ public abstract class SelectWidget extends ItemsWidget {
      */
     private static final int MAX_ITEMS_WITHOUT_SCREEN_BOUND = 40;
 
-    protected LinearLayout answerLayout;
+    LinearLayout answerLayout;
     protected int numColumns = 1;
 
     public SelectWidget(Context context, QuestionDetails questionDetails) {

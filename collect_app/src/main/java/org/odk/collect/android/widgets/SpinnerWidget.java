@@ -28,6 +28,7 @@ import org.javarosa.form.api.FormEntryPrompt;
 import org.odk.collect.android.R;
 import org.odk.collect.android.adapters.SpinnerAdapter;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.listeners.AdvanceToNextListener;
 import org.odk.collect.android.utilities.FormEntryPromptUtils;
 import org.odk.collect.android.utilities.ViewIds;
@@ -43,7 +44,7 @@ import org.odk.collect.android.widgets.interfaces.MultiChoiceWidget;
  */
 @SuppressLint("ViewConstructor")
 public class SpinnerWidget extends ItemsWidget implements MultiChoiceWidget {
-    private final ScrolledToTopSpinner spinner;
+    final ScrolledToTopSpinner spinner;
     private final SpinnerAdapter spinnerAdapter;
 
     // used to ascertain whether the user selected an item on spinner (not programmatically)
@@ -87,7 +88,7 @@ public class SpinnerWidget extends ItemsWidget implements MultiChoiceWidget {
         });
 
         fillInPreviousAnswer(questionDetails.getPrompt());
-        addAnswerView(view);
+        addAnswerView(view, WidgetViewUtils.getStandardMargin(context));
     }
 
     @Override

@@ -24,15 +24,20 @@ import com.google.zxing.integration.android.IntentIntegrator;
 
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.data.StringData;
+import org.jetbrains.annotations.Contract;
 import org.odk.collect.android.R;
 import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.activities.ScannerWithFlashlightActivity;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.listeners.PermissionListener;
 import org.odk.collect.android.utilities.CameraUtils;
 import org.odk.collect.android.utilities.ToastUtils;
 import org.odk.collect.android.utilities.WidgetAppearanceUtils;
 import org.odk.collect.android.widgets.interfaces.BinaryWidget;
+
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createSimpleButton;
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.getCenteredAnswerTextView;
 
 /**
  * Widget that allows user to scan barcodes and add them to the form.
@@ -40,15 +45,15 @@ import org.odk.collect.android.widgets.interfaces.BinaryWidget;
  * @author Yaw Anokwa (yanokwa@gmail.com)
  */
 public class BarcodeWidget extends QuestionWidget implements BinaryWidget {
-    private final Button getBarcodeButton;
-    private final TextView stringAnswer;
+    final Button getBarcodeButton;
+    final TextView stringAnswer;
 
     public BarcodeWidget(Context context, QuestionDetails questionDetails) {
         super(context, questionDetails);
 
-        getBarcodeButton = getSimpleButton(getContext().getString(R.string.get_barcode));
+        getBarcodeButton = createSimpleButton(getContext(), getFormEntryPrompt().isReadOnly(), getContext().getString(R.string.get_barcode), getAnswerFontSize(), this);
 
-        stringAnswer = getCenteredAnswerTextView();
+        stringAnswer = getCenteredAnswerTextView(getContext(), getAnswerFontSize());
 
         String s = questionDetails.getPrompt().getAnswerText();
         if (s != null) {
@@ -61,7 +66,7 @@ public class BarcodeWidget extends QuestionWidget implements BinaryWidget {
         answerLayout.setOrientation(LinearLayout.VERTICAL);
         answerLayout.addView(getBarcodeButton);
         answerLayout.addView(stringAnswer);
-        addAnswerView(answerLayout);
+        addAnswerView(answerLayout, WidgetViewUtils.getStandardMargin(context));
     }
 
     @Override
@@ -88,12 +93,18 @@ public class BarcodeWidget extends QuestionWidget implements BinaryWidget {
     @Override
     public void setBinaryData(Object answer) {
         String response = (String) answer;
-        if (response != null) {      // It looks like the answer is not set to null even if no barcode captured, however it seems prudent to check
-            response = response.replaceAll("\\p{C}", "");
-        }
-        stringAnswer.setText(response);
+        stringAnswer.setText(stripInvalidCharacters(response));
 
         widgetValueChanged();
+    }
+
+    // Remove control characters, invisible characters and unused code points.
+    @Contract("null -> null; !null -> !null")
+    protected static String stripInvalidCharacters(String data) {
+        if (data == null) {
+            return null;
+        }
+        return data.replaceAll("\\p{C}", "");
     }
 
     @Override

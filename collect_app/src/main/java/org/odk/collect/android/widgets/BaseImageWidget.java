@@ -36,10 +36,12 @@ import android.widget.Toast;
 
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.data.StringData;
+import org.javarosa.core.reference.InvalidReferenceException;
 import org.odk.collect.android.R;
 import org.odk.collect.android.activities.DrawActivity;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.storage.StoragePathProvider;
 import org.odk.collect.android.utilities.ApplicationConstants;
 import org.odk.collect.android.utilities.FileUtils;
 import org.odk.collect.android.utilities.MediaManager;
@@ -50,6 +52,8 @@ import org.odk.collect.android.widgets.interfaces.FileWidget;
 import java.io.File;
 
 import timber.log.Timber;
+
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createAnswerImageView;
 
 public abstract class BaseImageWidget extends QuestionWidget implements FileWidget {
     @Nullable
@@ -153,28 +157,22 @@ public abstract class BaseImageWidget extends QuestionWidget implements FileWidg
             int screenWidth = metrics.widthPixels;
             int screenHeight = metrics.heightPixels;
 
-            File f = new File(getInstanceFolder() + File.separator + binaryName);
-
-            Bitmap bmp = null;
+            File f = getFile();
             if (f.exists()) {
-                bmp = FileUtils.getBitmapScaledToDisplay(f, screenHeight, screenWidth);
+                Bitmap bmp = FileUtils.getBitmapScaledToDisplay(f, screenHeight, screenWidth);
                 if (bmp == null) {
                     errorTextView.setVisibility(View.VISIBLE);
+                } else {
+                    imageView = createAnswerImageView(getContext(), bmp);
+                    imageView.setOnClickListener(v -> {
+                        if (imageClickHandler != null) {
+                            imageClickHandler.clickImage("viewImage");
+                        }
+                    });
+
+                    answerLayout.addView(imageView);
                 }
             }
-
-            imageView = getAnswerImageView(bmp);
-            imageView.setOnClickListener(new View.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    if (imageClickHandler != null) {
-                        imageClickHandler.clickImage("viewImage");
-                    }
-                }
-            });
-
-            answerLayout.addView(imageView);
         }
     }
 
@@ -256,12 +254,10 @@ public abstract class BaseImageWidget extends QuestionWidget implements FileWidg
             errorTextView.setVisibility(View.GONE);
             Intent i = new Intent(getContext(), DrawActivity.class);
             i.putExtra(DrawActivity.OPTION, drawOption);
-            // copy...
             if (binaryName != null) {
-                File f = new File(getInstanceFolder() + File.separator + binaryName);
-                i.putExtra(DrawActivity.REF_IMAGE, Uri.fromFile(f));
+                i.putExtra(DrawActivity.REF_IMAGE, Uri.fromFile(getFile()));
             }
-            i.putExtra(DrawActivity.EXTRA_OUTPUT, Uri.fromFile(new File(Collect.TMPFILE_PATH)));
+            i.putExtra(DrawActivity.EXTRA_OUTPUT, Uri.fromFile(new File(new StoragePathProvider().getTmpFilePath())));
             i = addExtrasToIntent(i);
             launchActivityForResult(i, requestCode, stringResourceId);
         }
@@ -313,4 +309,25 @@ public abstract class BaseImageWidget extends QuestionWidget implements FileWidg
             cancelWaitingForData();
         }
     }
+
+    File getFile() {
+        File file = new File(getInstanceFolder() + File.separator + binaryName);
+        if (!file.exists() && doesSupportDefaultValues()) {
+            file = new File(getDefaultFilePath());
+        }
+
+        return file;
+    }
+
+    String getDefaultFilePath() {
+        try {
+            return referenceManager.deriveReference(binaryName).getLocalURI();
+        } catch (InvalidReferenceException e) {
+            Timber.w(e);
+        }
+
+        return "";
+    }
+
+    protected abstract boolean doesSupportDefaultValues();
 }

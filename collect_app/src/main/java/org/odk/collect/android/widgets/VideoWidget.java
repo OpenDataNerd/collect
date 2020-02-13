@@ -41,6 +41,7 @@ import org.odk.collect.android.activities.CaptureSelfieVideoActivity;
 import org.odk.collect.android.activities.CaptureSelfieVideoActivityNewApi;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.listeners.PermissionListener;
 import org.odk.collect.android.preferences.GeneralKeys;
 import org.odk.collect.android.utilities.CameraUtils;
@@ -51,6 +52,7 @@ import org.odk.collect.android.utilities.MediaUtil;
 import org.odk.collect.android.utilities.ToastUtils;
 import org.odk.collect.android.utilities.WidgetAppearanceUtils;
 import org.odk.collect.android.widgets.interfaces.FileWidget;
+import org.odk.collect.android.widgets.utilities.FileWidgetUtils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -60,6 +62,7 @@ import java.util.Locale;
 import timber.log.Timber;
 
 import static android.os.Build.MODEL;
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createSimpleButton;
 import static org.odk.collect.android.utilities.ApplicationConstants.RequestCodes;
 
 /**
@@ -85,9 +88,9 @@ public class VideoWidget extends QuestionWidget implements FileWidget {
     @NonNull
     private FileUtil fileUtil;
 
-    private Button captureButton;
-    private Button playButton;
-    private Button chooseButton;
+    Button captureButton;
+    Button playButton;
+    Button chooseButton;
     private String binaryName;
     private Uri nexus7Uri;
 
@@ -106,11 +109,12 @@ public class VideoWidget extends QuestionWidget implements FileWidget {
         String appearance = getFormEntryPrompt().getAppearanceHint();
         selfie = appearance != null && (appearance.equalsIgnoreCase(WidgetAppearanceUtils.SELFIE) || appearance.equalsIgnoreCase(WidgetAppearanceUtils.NEW_FRONT));
 
-        captureButton = getSimpleButton(getContext().getString(R.string.capture_video), R.id.capture_video);
+        captureButton = createSimpleButton(getContext(), R.id.capture_video, getFormEntryPrompt().isReadOnly(), getContext().getString(R.string.capture_video), getAnswerFontSize(), this);
 
-        chooseButton = getSimpleButton(getContext().getString(R.string.choose_video), R.id.choose_video);
+        chooseButton = createSimpleButton(getContext(), R.id.choose_video, getFormEntryPrompt().isReadOnly(), getContext().getString(R.string.choose_video), getAnswerFontSize(), this);
 
-        playButton = getSimpleButton(getContext().getString(R.string.play_video), R.id.play_video);
+        playButton = createSimpleButton(getContext(), R.id.play_video, getFormEntryPrompt().isReadOnly(), getContext().getString(R.string.play_video), getAnswerFontSize(), this);
+        playButton.setVisibility(VISIBLE);
 
         // retrieve answer from data model and update ui
         binaryName = questionDetails.getPrompt().getAnswerText();
@@ -122,7 +126,7 @@ public class VideoWidget extends QuestionWidget implements FileWidget {
         answerLayout.addView(captureButton);
         answerLayout.addView(chooseButton);
         answerLayout.addView(playButton);
-        addAnswerView(answerLayout);
+        addAnswerView(answerLayout, WidgetViewUtils.getStandardMargin(context));
 
         hideButtonsIfNeeded();
 
@@ -228,7 +232,7 @@ public class VideoWidget extends QuestionWidget implements FileWidget {
         // get the file path and create a copy in the instance folder
         if (object instanceof Uri) {
             String sourcePath = getSourcePathFromUri((Uri) object);
-            String destinationPath = getDestinationPathFromSourcePath(sourcePath);
+            String destinationPath = FileWidgetUtils.getDestinationPathFromSourcePath(sourcePath, getInstanceFolder(), fileUtil);
             File source = fileUtil.getFileAtPath(sourcePath);
             newVideo = fileUtil.getFileAtPath(destinationPath);
             fileUtil.copyFile(source, newVideo);
@@ -292,12 +296,6 @@ public class VideoWidget extends QuestionWidget implements FileWidget {
 
     private String getSourcePathFromUri(@NonNull Uri uri) {
         return mediaUtil.getPathFromUri(getContext(), uri, Video.Media.DATA);
-    }
-
-    private String getDestinationPathFromSourcePath(@NonNull String sourcePath) {
-        String extension = sourcePath.substring(sourcePath.lastIndexOf('.'));
-        return getInstanceFolder() + File.separator
-                + fileUtil.getRandomFilename() + extension;
     }
 
     @Override

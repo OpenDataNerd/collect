@@ -29,6 +29,7 @@ import org.odk.collect.android.R;
 import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.fragments.dialogs.RankingWidgetDialog;
 import org.odk.collect.android.logic.FormController;
 import org.odk.collect.android.widgets.interfaces.BinaryWidget;
@@ -37,11 +38,14 @@ import org.odk.collect.android.widgets.warnings.SpacesInUnderlyingValuesWarning;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createAnswerTextView;
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createSimpleButton;
+
 public class RankingWidget extends ItemsWidget implements BinaryWidget {
 
     private List<SelectChoice> savedItems;
     private LinearLayout widgetLayout;
-    private Button showRankingDialogButton;
+    Button showRankingDialogButton;
 
     public RankingWidget(Context context, QuestionDetails prompt) {
         super(context, prompt);
@@ -84,7 +88,7 @@ public class RankingWidget extends ItemsWidget implements BinaryWidget {
 
     @Override
     public void setBinaryData(Object values) {
-        savedItems = getSavedItems((List<String>) values);
+        savedItems = (List<SelectChoice>) values;
         setUpLayout(savedItems);
     }
 
@@ -94,31 +98,8 @@ public class RankingWidget extends ItemsWidget implements BinaryWidget {
         if (formController != null) {
             formController.setIndexWaitingForData(getFormEntryPrompt().getIndex());
         }
-        RankingWidgetDialog rankingWidgetDialog = RankingWidgetDialog.newInstance(savedItems == null
-                ? getValues(items)
-                : getValues(savedItems), getFormEntryPrompt().getIndex());
+        RankingWidgetDialog rankingWidgetDialog = RankingWidgetDialog.newInstance(savedItems == null ? items : savedItems, getFormEntryPrompt().getIndex());
         rankingWidgetDialog.show(((FormEntryActivity) getContext()).getSupportFragmentManager(), "RankingDialog");
-    }
-
-    private List<SelectChoice> getSavedItems(List<String> values) {
-        List<SelectChoice> savedItems = new ArrayList<>();
-        for (String value : values) {
-            for (SelectChoice item : items) {
-                if (item.getValue().equals(value)) {
-                    savedItems.add(item);
-                    break;
-                }
-            }
-        }
-        return savedItems;
-    }
-
-    private List<String> getValues(List<SelectChoice> items) {
-        List<String> values = new ArrayList<>();
-        for (SelectChoice item : items) {
-            values.add(item.getValue());
-        }
-        return values;
     }
 
     private List<SelectChoice> getOrderedItems() {
@@ -155,12 +136,11 @@ public class RankingWidget extends ItemsWidget implements BinaryWidget {
 
         widgetLayout = new LinearLayout(getContext());
         widgetLayout.setOrientation(LinearLayout.VERTICAL);
-        showRankingDialogButton = getSimpleButton(getContext().getString(R.string.rank_items));
-        showRankingDialogButton.setEnabled(!getFormEntryPrompt().isReadOnly());
+        showRankingDialogButton = createSimpleButton(getContext(), getFormEntryPrompt().isReadOnly(), getContext().getString(R.string.rank_items), getAnswerFontSize(), this);
         widgetLayout.addView(showRankingDialogButton);
         widgetLayout.addView(setUpAnswerTextView());
 
-        addAnswerView(widgetLayout);
+        addAnswerView(widgetLayout, WidgetViewUtils.getStandardMargin(getContext()));
         SpacesInUnderlyingValuesWarning
                 .forQuestionWidget(this)
                 .renderWarningIfNecessary(items);
@@ -179,6 +159,6 @@ public class RankingWidget extends ItemsWidget implements BinaryWidget {
                 }
             }
         }
-        return getAnswerTextView(answerText.toString());
+        return createAnswerTextView(getContext(), answerText.toString(), getAnswerFontSize());
     }
 }

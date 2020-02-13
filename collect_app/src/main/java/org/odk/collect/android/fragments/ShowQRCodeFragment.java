@@ -48,7 +48,6 @@ import org.odk.collect.android.activities.ScannerWithFlashlightActivity;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.listeners.ActionListener;
 import org.odk.collect.android.listeners.PermissionListener;
-import org.odk.collect.android.preferences.AdminPreferencesActivity;
 import org.odk.collect.android.preferences.AdminSharedPreferences;
 import org.odk.collect.android.preferences.GeneralSharedPreferences;
 import org.odk.collect.android.preferences.PreferenceSaver;
@@ -166,7 +165,7 @@ public class ShowQRCodeFragment extends Fragment {
                 IntentIntegrator.forFragment(ShowQRCodeFragment.this)
                         .setCaptureActivity(ScannerWithFlashlightActivity.class)
                         .setBeepEnabled(true)
-                        .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES)
+                        .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
                         .setOrientationLocked(false)
                         .setPrompt(getString(R.string.qrcode_scanner_prompt))
                         .initiateScan();
@@ -301,25 +300,6 @@ public class ShowQRCodeFragment extends Fragment {
             case R.id.menu_item_share:
                 if (shareIntent != null) {
                     startActivity(Intent.createChooser(shareIntent, getString(R.string.share_qrcode)));
-                }
-                return true;
-            case R.id.menu_save_preferences:
-                File writeDir = new File(Collect.SETTINGS);
-                if (!writeDir.exists()) {
-                    if (!writeDir.mkdirs()) {
-                        ToastUtils.showShortToast("Error creating directory "
-                                + writeDir.getAbsolutePath());
-                        return false;
-                    }
-                }
-
-                File dst = new File(writeDir.getAbsolutePath() + "/collect.settings");
-                boolean success = AdminPreferencesActivity.saveSharedPreferencesToFile(dst, getActivity());
-                if (success) {
-                    ToastUtils.showLongToast("Settings successfully written to "
-                            + dst.getAbsolutePath());
-                } else {
-                    ToastUtils.showLongToast("Error writing settings to " + dst.getAbsolutePath());
                 }
                 return true;
         }

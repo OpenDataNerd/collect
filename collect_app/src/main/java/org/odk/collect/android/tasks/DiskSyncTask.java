@@ -20,11 +20,14 @@ import android.database.SQLException;
 import android.net.Uri;
 import android.os.AsyncTask;
 
+import org.javarosa.core.reference.ReferenceManager;
 import org.odk.collect.android.R;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.dao.FormsDao;
 import org.odk.collect.android.listeners.DiskSyncListener;
 import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
+import org.odk.collect.android.storage.StoragePathProvider;
+import org.odk.collect.android.storage.StorageSubdirectory;
 import org.odk.collect.android.utilities.FileUtils;
 import org.odk.collect.android.utilities.Validator;
 
@@ -36,6 +39,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import timber.log.Timber;
+
+import static org.odk.collect.android.forms.FormUtils.setupReferenceManagerForForm;
 
 /**
  * Background task for adding to the forms content provider, any forms that have been added to the
@@ -62,27 +67,14 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
             // Process everything then report what didn't work.
             StringBuilder errors = new StringBuilder();
 
-            File formDir = new File(Collect.FORMS_PATH);
+            StoragePathProvider storagePathProvider = new StoragePathProvider();
+            File formDir = new File(storagePathProvider.getDirPath(StorageSubdirectory.FORMS));
             if (formDir.exists() && formDir.isDirectory()) {
                 // Get all the files in the /odk/foms directory
-                List<File> formsToAdd = new LinkedList<>();
+                File[] formDefs = formDir.listFiles();
 
                 // Step 1: assemble the candidate form files
-                //         discard files beginning with "."
-                //         discard files not ending with ".xml" or ".xhtml"
-                {
-                    File[] formDefs = formDir.listFiles();
-                    for (File addMe : formDefs) {
-                        // Ignore invisible files that start with periods.
-                        if (!addMe.getName().startsWith(".")
-                                && (addMe.getName().endsWith(".xml") || addMe.getName().endsWith(
-                                ".xhtml"))) {
-                            formsToAdd.add(addMe);
-                        } else {
-                            Timber.i("[%d] Ignoring: %s", instance, addMe.getAbsolutePath());
-                        }
-                    }
-                }
+                List<File> formsToAdd = filterFormsToAdd(formDefs, instance);
 
                 // Step 2: quickly run through and figure out what files we need to
                 // parse and update; this is quick, as we only calculate the md5
@@ -103,8 +95,8 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
                     while (cursor.moveToNext()) {
                         // For each element in the provider, see if the file already exists
                         String sqlFilename =
-                                cursor.getString(
-                                        cursor.getColumnIndex(FormsColumns.FORM_FILE_PATH));
+                                storagePathProvider.getAbsoluteFormFilePath(cursor.getString(
+                                        cursor.getColumnIndex(FormsColumns.FORM_FILE_PATH)));
                         String md5 = cursor.getString(
                                 cursor.getColumnIndex(FormsColumns.MD5_HASH));
                         File sqlFile = new File(sqlFilename);
@@ -224,6 +216,29 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
         }
     }
 
+    protected static List<File> filterFormsToAdd(File[] formDefs, int backgroundInstanceId) {
+        List<File> formsToAdd = new LinkedList<>();
+        if (formDefs != null) {
+            for (File candidate : formDefs) {
+                if (shouldAddFormFile(candidate.getName())) {
+                    formsToAdd.add(candidate);
+                } else {
+                    Timber.i("[%d] Ignoring: %s", backgroundInstanceId, candidate.getAbsolutePath());
+                }
+            }
+        }
+        return formsToAdd;
+    }
+
+    protected static boolean shouldAddFormFile(String fileName) {
+        // discard files beginning with "."
+        // discard files not ending with ".xml" or ".xhtml"
+        boolean ignoredFile = fileName.startsWith(".");
+        boolean xmlFile = fileName.endsWith(".xml");
+        boolean xhtmlFile = fileName.endsWith(".xhtml");
+        return !ignoredFile && (xmlFile || xhtmlFile);
+    }
+
     private boolean isAlreadyDefined(File formDefFile) {
         // first try to see if a record with this filename already exists...
         Cursor c = null;
@@ -257,6 +272,10 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 
         HashMap<String, String> fields;
         try {
+            // If the form definition includes external secondary instances, they need to be resolved
+            final File formMediaDir = FileUtils.getFormMediaDir(formDefFile);
+            setupReferenceManagerForForm(ReferenceManager.instance(), formMediaDir);
+
             fields = FileUtils.getMetadataFromFormDefinition(formDefFile);
         } catch (RuntimeException e) {
             throw new IllegalArgumentException(formDefFile.getName() + " :: " + e.toString());
@@ -307,7 +326,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 
         // Note, the path doesn't change here, but it needs to be included so the
         // update will automatically update the .md5 and the cache path.
-        updateValues.put(FormsColumns.FORM_FILE_PATH, formDefFile.getAbsolutePath());
+        updateValues.put(FormsColumns.FORM_FILE_PATH, new StoragePathProvider().getFormDbPath(formDefFile.getAbsolutePath()));
 
         return updateValues;
     }

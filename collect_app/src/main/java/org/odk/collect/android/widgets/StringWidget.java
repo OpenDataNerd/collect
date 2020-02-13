@@ -16,7 +16,6 @@ package org.odk.collect.android.widgets;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Resources;
 import android.text.Editable;
 import android.text.Selection;
 import android.text.TextWatcher;
@@ -31,15 +30,13 @@ import org.javarosa.core.model.QuestionDef;
 import org.javarosa.core.model.data.IAnswerData;
 import org.javarosa.core.model.data.StringData;
 import org.javarosa.form.api.FormEntryPrompt;
-import org.odk.collect.android.R;
 import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.utilities.SoftKeyboardUtils;
 import org.odk.collect.android.utilities.ViewIds;
 
 import timber.log.Timber;
-
-import static org.odk.collect.android.utilities.ViewUtils.dpFromPx;
 
 /**
  * The most basic widget that allows for entry of any text.
@@ -47,12 +44,8 @@ import static org.odk.collect.android.utilities.ViewUtils.dpFromPx;
 @SuppressLint("ViewConstructor")
 public class StringWidget extends QuestionWidget {
 
-    // This modifies our standard margin to account for weird extra padding in the
-    // EditText used in the answer view
-    public static final int FIELD_HORIZONTAL_MARGIN_MODIFIER = 4;
-
     boolean readOnly;
-    protected final EditText answerText;
+    public final EditText answerText;
 
     protected StringWidget(Context context, QuestionDetails questionDetails, boolean readOnlyOverride) {
         super(context, questionDetails);
@@ -64,11 +57,7 @@ public class StringWidget extends QuestionWidget {
 
     protected void setUpLayout(Context context) {
         setDisplayValueFromModel();
-
-        Resources resources = context.getResources();
-        int marginStandard = dpFromPx(context, resources.getDimensionPixelSize(R.dimen.margin_standard));
-        int margin = marginStandard - FIELD_HORIZONTAL_MARGIN_MODIFIER;
-        addAnswerView(answerText, margin);
+        addAnswerView(answerText, WidgetViewUtils.getStandardMargin(context));
     }
 
     @Override

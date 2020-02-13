@@ -16,7 +16,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.activities.MainMenuActivity;
-import org.odk.collect.android.espressoutils.pages.MainMenuPage;
+import org.odk.collect.android.support.pages.MainMenuPage;
 import org.odk.collect.android.support.CopyFormRule;
 import org.odk.collect.android.support.ResetStateRule;
 import org.odk.collect.android.utilities.GeoUtils;
@@ -33,7 +33,8 @@ public class FormMapTest {
     @Rule public RuleChain copyFormChain = RuleChain
             .outerRule(GrantPermissionRule.grant(
                     Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
             ))
             .around(new ResetStateRule())
             .around(new CopyFormRule(SINGLE_GEOPOINT_FORM))
@@ -64,7 +65,7 @@ public class FormMapTest {
         new MainMenuPage(rule)
                 .clickFillBlankForm()
                 .clickOnMapIconForForm("Single geopoint")
-                .checkIsTextDisplayed("Single geopoint");
+                .assertText("Single geopoint");
     }
 
     @Test public void fillingBlankForm_addsInstanceToMap() {
@@ -79,6 +80,6 @@ public class FormMapTest {
                 .clickWidgetButton()
                 .swipeToNextQuestion()
                 .clickSaveAndExitBackToMap()
-                .checkIsTextDisplayed(oneInstanceString);
+                .assertText(oneInstanceString);
     }
 }

@@ -28,6 +28,7 @@ import org.javarosa.core.model.data.SelectMultiData;
 import org.javarosa.core.model.data.helper.Selection;
 import org.odk.collect.android.R;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
+import org.odk.collect.android.formentry.questions.WidgetViewUtils;
 import org.odk.collect.android.utilities.StringUtils;
 import org.odk.collect.android.widgets.interfaces.ButtonWidget;
 import org.odk.collect.android.widgets.interfaces.MultiChoiceWidget;
@@ -35,6 +36,9 @@ import org.odk.collect.android.widgets.warnings.SpacesInUnderlyingValuesWarning;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createAnswerTextView;
+import static org.odk.collect.android.formentry.questions.WidgetViewUtils.createSimpleButton;
 
 /**
  * SpinnerMultiWidget, like SelectMultiWidget handles multiple selection fields using checkboxes,
@@ -74,7 +78,7 @@ public class SpinnerMultiWidget extends ItemsWidget implements ButtonWidget, Mul
         answerItems = new String[items.size()];
         styledAnswerItems = new CharSequence[items.size()];
         alertBuilder = new AlertDialog.Builder(context);
-        button = getSimpleButton(context.getString(R.string.select_answer));
+        button = createSimpleButton(getContext(), getFormEntryPrompt().isReadOnly(), context.getString(R.string.select_answer), getAnswerFontSize(), this);
 
         // Build View
         for (int i = 0; i < items.size(); i++) {
@@ -82,7 +86,7 @@ public class SpinnerMultiWidget extends ItemsWidget implements ButtonWidget, Mul
             styledAnswerItems[i] = StringUtils.textToHtml(answerItems[i]);
         }
 
-        selectionText = getAnswerTextView();
+        selectionText = createAnswerTextView(getContext(), getAnswerFontSize());
         selectionText.setVisibility(View.GONE);
 
         // Fill in previous answers
@@ -110,7 +114,7 @@ public class SpinnerMultiWidget extends ItemsWidget implements ButtonWidget, Mul
         answerLayout.setOrientation(LinearLayout.VERTICAL);
         answerLayout.addView(button);
         answerLayout.addView(selectionText);
-        addAnswerView(answerLayout);
+        addAnswerView(answerLayout, WidgetViewUtils.getStandardMargin(context));
 
         SpacesInUnderlyingValuesWarning.forQuestionWidget(this).renderWarningIfNecessary(items);
     }

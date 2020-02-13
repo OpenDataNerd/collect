@@ -44,12 +44,12 @@ import org.odk.collect.android.R;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.audio.AudioHelper;
 import org.odk.collect.android.external.ExternalSelectChoice;
+import org.odk.collect.android.formentry.ODKView;
 import org.odk.collect.android.formentry.questions.AudioVideoImageTextLabel;
 import org.odk.collect.android.utilities.FileUtils;
 import org.odk.collect.android.utilities.FormEntryPromptUtils;
 import org.odk.collect.android.utilities.ImageConverter;
 import org.odk.collect.android.utilities.WidgetAppearanceUtils;
-import org.odk.collect.android.views.ODKView;
 import org.odk.collect.android.widgets.SelectWidget;
 
 import java.io.File;
@@ -59,8 +59,8 @@ import java.util.Locale;
 
 import timber.log.Timber;
 
-import static org.odk.collect.android.formentry.media.FormMediaHelpers.getClipID;
-import static org.odk.collect.android.formentry.media.FormMediaHelpers.getPlayableAudioURI;
+import static org.odk.collect.android.formentry.media.FormMediaUtils.getClipID;
+import static org.odk.collect.android.formentry.media.FormMediaUtils.getPlayableAudioURI;
 import static org.odk.collect.android.widgets.QuestionWidget.isRTL;
 
 public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<AbstractSelectListAdapter.ViewHolder>
@@ -153,7 +153,6 @@ public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<Abs
 
     View setUpNoButtonsView(int index) {
         View view = new View(context);
-        int itemPadding = context.getResources().getDimensionPixelSize(R.dimen.select_item_border);
 
         SelectChoice selectChoice = filteredItems.get(index);
 
@@ -170,7 +169,6 @@ public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<Abs
 
                     if (bitmap != null) {
                         ImageView imageView = new ImageView(context);
-                        imageView.setPadding(itemPadding, itemPadding, itemPadding, itemPadding);
                         imageView.setImageBitmap(ImageConverter.scaleImageToNewWidth(bitmap, context.getResources().getDisplayMetrics().widthPixels / numColumns));
                         imageView.setAdjustViewBounds(true);
                         view = imageView;
@@ -191,7 +189,6 @@ public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<Abs
             TextView missingImage = new TextView(context);
             missingImage.setTextSize(TypedValue.COMPLEX_UNIT_DIP, getAnswerFontSize());
             missingImage.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-            missingImage.setPadding(itemPadding, itemPadding, itemPadding, itemPadding);
 
             String choiceText = FormEntryPromptUtils.getItemText(getFormEntryPrompt(), selectChoice).toString();
 
@@ -205,8 +202,10 @@ public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<Abs
             view = missingImage;
         }
 
-        view.setOnClickListener(v -> onItemClick(selectChoice.selection(), v));
-        view.setEnabled(!getFormEntryPrompt().isReadOnly());
+        int itemPadding = context.getResources().getDimensionPixelSize(R.dimen.select_item_border);
+        int paddingStartEnd = context.getResources().getDimensionPixelSize(R.dimen.margin_standard);
+        view.setPadding(paddingStartEnd, itemPadding, paddingStartEnd, itemPadding);
+
         return view;
     }
 
@@ -243,6 +242,8 @@ public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<Abs
             if (noButtonsMode) {
                 view.removeAllViews();
                 view.addView(setUpNoButtonsView(index));
+                view.setOnClickListener(v -> onItemClick(filteredItems.get(index).selection(), v));
+                view.setEnabled(!getFormEntryPrompt().isReadOnly());
             } else {
                 addMediaFromChoice(audioVideoImageTextLabel, index, createButton(index, audioVideoImageTextLabel), filteredItems);
                 audioVideoImageTextLabel.setEnabled(!getFormEntryPrompt().isReadOnly());
@@ -256,7 +257,7 @@ public abstract class AbstractSelectListAdapter extends RecyclerView.Adapter<Abs
             SelectChoice item = items.get(index);
 
             audioVideoImageTextLabel.setTag(getClipID(getFormEntryPrompt(), item));
-            audioVideoImageTextLabel.setText(textView);
+            audioVideoImageTextLabel.setTextView(textView);
 
             String imageURI = getImageURI(index, items);
             String videoURI = getFormEntryPrompt().getSpecialFormSelectChoiceText(item, "video");

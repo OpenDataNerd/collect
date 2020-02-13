@@ -1,36 +1,46 @@
 package org.odk.collect.android.injection.config;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
+import android.telephony.TelephonyManager;
 import android.webkit.MimeTypeMap;
 
 import org.javarosa.core.reference.ReferenceManager;
 import org.odk.collect.android.analytics.Analytics;
 import org.odk.collect.android.analytics.FirebaseAnalytics;
-import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.dao.FormsDao;
 import org.odk.collect.android.dao.InstancesDao;
 import org.odk.collect.android.events.RxEventBus;
 import org.odk.collect.android.formentry.media.AudioHelperFactory;
 import org.odk.collect.android.formentry.media.ScreenContextAudioHelperFactory;
-import org.odk.collect.android.http.CollectServerClient;
-import org.odk.collect.android.http.CollectThenSystemContentTypeMapper;
-import org.odk.collect.android.http.openrosa.OpenRosaHttpInterface;
-import org.odk.collect.android.http.openrosa.okhttp.OkHttpConnection;
-import org.odk.collect.android.http.openrosa.okhttp.OkHttpOpenRosaServerClientProvider;
+import org.odk.collect.android.metadata.InstallIDProvider;
+import org.odk.collect.android.metadata.SharedPreferencesInstallIDProvider;
+import org.odk.collect.android.openrosa.CollectThenSystemContentTypeMapper;
+import org.odk.collect.android.openrosa.OpenRosaAPIClient;
+import org.odk.collect.android.openrosa.OpenRosaHttpInterface;
+import org.odk.collect.android.openrosa.okhttp.OkHttpConnection;
+import org.odk.collect.android.openrosa.okhttp.OkHttpOpenRosaServerClientProvider;
 import org.odk.collect.android.tasks.sms.SmsSubmissionManager;
 import org.odk.collect.android.tasks.sms.contracts.SmsSubmissionManagerContract;
 import org.odk.collect.android.utilities.ActivityAvailability;
-import org.odk.collect.android.utilities.DownloadFormListUtils;
+import org.odk.collect.android.utilities.AndroidUserAgent;
+import org.odk.collect.android.utilities.DeviceDetailsProvider;
+import org.odk.collect.android.utilities.FormListDownloader;
 import org.odk.collect.android.utilities.PermissionUtils;
 import org.odk.collect.android.utilities.WebCredentialsUtils;
+import org.odk.collect.utilities.UserAgentProvider;
 
 import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
 import okhttp3.OkHttpClient;
+
+import static org.odk.collect.android.preferences.GeneralKeys.KEY_INSTALL_ID;
 
 /**
  * Add dependency providers here (annotated with @Provides)
@@ -77,17 +87,23 @@ public class AppDependencyModule {
 
     @Provides
     @Singleton
-    OpenRosaHttpInterface provideHttpInterface(MimeTypeMap mimeTypeMap) {
+    public UserAgentProvider providesUserAgent() {
+        return new AndroidUserAgent();
+    }
+
+    @Provides
+    @Singleton
+    OpenRosaHttpInterface provideHttpInterface(MimeTypeMap mimeTypeMap, UserAgentProvider userAgentProvider) {
         return new OkHttpConnection(
                 new OkHttpOpenRosaServerClientProvider(new OkHttpClient()),
                 new CollectThenSystemContentTypeMapper(mimeTypeMap),
-                Collect.getInstance().getUserAgentString()
+                userAgentProvider.getUserAgent()
         );
     }
 
     @Provides
-    CollectServerClient provideCollectServerClient(OpenRosaHttpInterface httpInterface, WebCredentialsUtils webCredentialsUtils) {
-        return new CollectServerClient(httpInterface, webCredentialsUtils);
+    public OpenRosaAPIClient provideCollectServerClient(OpenRosaHttpInterface httpInterface, WebCredentialsUtils webCredentialsUtils) {
+        return new OpenRosaAPIClient(httpInterface, webCredentialsUtils);
     }
 
     @Provides
@@ -96,14 +112,14 @@ public class AppDependencyModule {
     }
 
     @Provides
-    DownloadFormListUtils provideDownloadFormListUtils(
+    FormListDownloader provideDownloadFormListDownloader(
             Application application,
-            CollectServerClient collectServerClient,
+            OpenRosaAPIClient openRosaAPIClient,
             WebCredentialsUtils webCredentialsUtils,
             FormsDao formsDao) {
-        return new DownloadFormListUtils(
+        return new FormListDownloader(
                 application,
-                collectServerClient,
+                openRosaAPIClient,
                 webCredentialsUtils,
                 formsDao
         );
@@ -146,5 +162,43 @@ public class AppDependencyModule {
     @Provides
     public ActivityAvailability providesActivityAvailability(Context context) {
         return new ActivityAvailability(context);
+    }
+
+    @Provides
+    InstallIDProvider providesInstallIDProvider(Context context) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        return new SharedPreferencesInstallIDProvider(preferences, KEY_INSTALL_ID);
+    }
+
+    @Provides
+    public DeviceDetailsProvider providesDeviceDetailsProvider(Context context) {
+        TelephonyManager telMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+
+        return new DeviceDetailsProvider() {
+
+            @Override
+            @SuppressLint("MissingPermission")
+            public String getDeviceId() {
+                return telMgr.getDeviceId();
+            }
+
+            @Override
+            @SuppressLint("MissingPermission")
+            public String getLine1Number() {
+                return telMgr.getLine1Number();
+            }
+
+            @Override
+            @SuppressLint("MissingPermission")
+            public String getSubscriberId() {
+                return telMgr.getSubscriberId();
+            }
+
+            @Override
+            @SuppressLint("MissingPermission")
+            public String getSimSerialNumber() {
+                return telMgr.getSimSerialNumber();
+            }
+        };
     }
 }

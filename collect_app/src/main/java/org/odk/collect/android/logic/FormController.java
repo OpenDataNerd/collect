@@ -50,13 +50,13 @@ import org.javarosa.xpath.XPathParseTool;
 import org.javarosa.xpath.expr.XPathExpression;
 import org.odk.collect.android.exception.JavaRosaException;
 import org.odk.collect.android.external.ExternalDataUtil;
+import org.odk.collect.android.formentry.ODKView;
 import org.odk.collect.android.formentry.audit.AsyncTaskAuditEventWriter;
 import org.odk.collect.android.formentry.audit.AuditConfig;
 import org.odk.collect.android.formentry.audit.AuditEventLogger;
 import org.odk.collect.android.logic.actions.setgeopoint.CollectSetGeopointActionHandler;
 import org.odk.collect.android.utilities.FileUtils;
-import org.odk.collect.android.utilities.RegexUtils;
-import org.odk.collect.android.views.ODKView;
+import org.odk.collect.android.utilities.FormNameUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class FormController {
 
         public InstanceMetadata(String instanceId, String instanceName, AuditConfig auditConfig) {
             this.instanceId = instanceId;
-            this.instanceName = RegexUtils.normalizeFormName(instanceName, false);
+            this.instanceName = FormNameUtils.normalizeFormName(instanceName, false);
             this.auditConfig = auditConfig;
         }
     }
