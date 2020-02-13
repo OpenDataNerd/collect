@@ -12,7 +12,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
-import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.storage.StoragePathProvider;
+import org.odk.collect.android.storage.StorageSubdirectory;
 import org.odk.collect.android.support.CopyFormRule;
 import org.odk.collect.android.support.ResetStateRule;
 import org.odk.collect.android.utilities.CustomSQLiteQueryBuilder;
@@ -37,7 +38,7 @@ public class ExternalDataTest {
 
     @Before
     public void setUp() {
-        formPath = new File(Collect.FORMS_PATH + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM_FILENAME);
+        formPath = new File(new StoragePathProvider().getDirPath(StorageSubdirectory.FORMS) + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FORM_FILENAME);
         mediaDir = FileUtils.getFormMediaDir(formPath);
         csvFile = new File(mediaDir + File.separator + SIMPLE_SEARCH_EXTERNAL_CSV_FILENAME);
         dbFile = new File(mediaDir + File.separator + SIMPLE_SEARCH_EXTERNAL_DB_FILENAME);
